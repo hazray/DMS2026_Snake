@@ -39,50 +39,40 @@ public class Snake {
 
     public void move(char dir) {
         body.add(new Point(head));
+        Point previous = new Point(head);
         switch (dir) {
             case 'U':
                 snakeDir = 0;
                 head.translate(0, -1);
-                if (borderControl() && (!ignoreBorders && !noBorder) || obstacle.getObstacles().contains(head)) {
-                    head.translate(0, 1);
-                    dead = true;
-                } else if (borderControl() && (ignoreBorders || noBorder)) {
-                    head.setLocation(head.getX(), gy - 1);
-                }
                 break;
-
             case 'D':
                 snakeDir = 180;
                 head.translate(0, 1);
-                if (borderControl() && (!ignoreBorders && !noBorder) || obstacle.getObstacles().contains(head)) {
-                    head.translate(0, -1);
-                    dead = true;
-                } else if (borderControl() && (ignoreBorders || noBorder)) {
-                    head.setLocation(head.getX(), 0);
-                }
                 break;
-
             case 'L':
                 snakeDir = 270;
                 head.translate(-1, 0);
-                if (borderControl() && (!ignoreBorders && !noBorder) || obstacle.getObstacles().contains(head)) {
-                    head.translate(1, 0);
-                    dead = true;
-                } else if (borderControl() && (ignoreBorders || noBorder)) {
-                    head.setLocation(gx - 1, head.getY());
-                }
                 break;
-
             case 'R':
                 snakeDir = 90;
                 head.translate(1, 0);
-                if (borderControl() && (!ignoreBorders && !noBorder) || obstacle.getObstacles().contains(head)) {
-                    head.translate(-1, 0);
-                    dead = true;
-                } else if (borderControl() && (ignoreBorders || noBorder)) {
-                    head.setLocation(0, head.getY());
-                }
                 break;
+        }
+
+        // Leaving the board: wrap to the opposite edge if borders are off, otherwise die.
+        if (borderControl()) {
+            if (ignoreBorders || noBorder) {
+                head.setLocation(Math.floorMod(head.x, gx), Math.floorMod(head.y, gy));
+            } else {
+                head.setLocation(previous);
+                dead = true;
+            }
+        }
+
+        // Check obstacles only after any wrap, so wrapping onto an obstacle also kills the snake.
+        if (!dead && obstacle.getObstacles().contains(head)) {
+            head.setLocation(previous);
+            dead = true;
         }
 
         if (body.size() > 4 && hitSelf() && !body.get(0).equals(head)) {

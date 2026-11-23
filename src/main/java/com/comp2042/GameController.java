@@ -41,11 +41,19 @@ public class GameController {
         this.stage = stage;
 
         this.obstacle = obstacle;
+
+        // key/lastKey are static, so clear any direction left over from a previous game.
+        key = KeyCode.LEFT;
+        lastKey = KeyCode.LEFT;
+
         animation.setCycleCount(Animation.INDEFINITE);
         animation.setRate(game.getSpeed());
     }
 
-    private final Timeline animation = new Timeline(new KeyFrame(Duration.seconds(1), event -> {
+    private final Timeline animation = new Timeline(new KeyFrame(Duration.seconds(1), event -> tick()));
+
+    /** Advances the game by one step; called by the timeline on every frame. */
+    private void tick() {
         if (snek.getDead()) {
             return;
         } else {
@@ -64,7 +72,12 @@ public class GameController {
                 powerCoin();
                 game.incScore();
                 if (game.gameWon()) {
+                    // Stop the game loop so the full-board snake doesn't keep moving and die,
+                    // and refresh the labels that the early return used to skip.
+                    animation.stop();
                     gameView.drawGrid(coin, snek, obstacle, gameView.gc, false, 0);
+                    gameView.gameWon();
+                    gameView.updateScoreLabel();
                     return;
                 }
                 newCoin();
@@ -80,10 +93,11 @@ public class GameController {
             gameView.gameOver(snek);
             gameView.updateScoreLabel();
         }
-    }));
+    }
 
     public void handle(KeyEvent event) {
-        if (event.getCode().isArrowKey()) animation.play();
+        // Don't restart the game loop once the game has been won.
+        if (event.getCode().isArrowKey() && !game.gameWon()) animation.play();
 
         if (valKey(event.getCode()) && !keyPressed) {
             lastKey = key;
@@ -116,9 +130,11 @@ public class GameController {
         }
 
         if (event.getCode().equals(KeyCode.ESCAPE)) {
-            MainMenuController mainMenuController = new MainMenuController();
-            mainMenuController.getViewManager().getPrimaryStage().show();
-            mainMenuController.getViewManager().getGameStage().close();
+            // Stop this game's loop, otherwise it keeps ticking after the window closes.
+            animation.stop();
+            ViewManager viewManager = Main.getViewManager();
+            viewManager.getPrimaryStage().show();
+            viewManager.getGameStage().close();
         }
     }
 
@@ -127,7 +143,7 @@ public class GameController {
         else {
             if (key.equals(KeyCode.LEFT)) if (!this.key.equals(KeyCode.RIGHT)) return true;
             if (key.equals(KeyCode.RIGHT)) if (!this.key.equals(KeyCode.LEFT)) return true;
-            if (key.equals(KeyCode.DOWN)) if (!this.key.equals(KeyCode.DOWN)) return true;
+            if (key.equals(KeyCode.DOWN)) if (!this.key.equals(KeyCode.UP)) return true;
             if (key.equals(KeyCode.UP)) return !this.key.equals(KeyCode.DOWN);
             return false;
         }
@@ -164,8 +180,8 @@ public class GameController {
             animation.setRate(game.getSpeed() + tempCoin.getSpeedBonus());
         } else if (coin.getClass().equals(SilverCoin.class)){
             Random rnd = new Random();
-            obstacle.newObstacles(snek, coin, rnd.nextInt(game.getWidth() * game.getHeight()/ 20) +3);
-            game.decMaxScore(obstacle.getObstacles().size());
+            int added = obstacle.newObstacles(snek, coin, rnd.nextInt(game.getWidth() * game.getHeight()/ 20) +3);
+            game.decMaxScore(added);
         } else if (coin.getClass().equals(BlueCoin.class)) {
             snek.ignoreBorders(true);
         }
@@ -178,7 +194,7 @@ public class GameController {
             int ran = rnd.nextInt(12);
             if (ran == 1) {
                 coin = new GoldCoin(game.getWidth(), game.getHeight(), snek, obstacle);
-            } else if (ran == 1) {
+            } else if (ran == 2) {
                 coin = new RainbowCoin(game.getWidth(), game.getHeight(), snek, obstacle);
             } else if (ran == 3) {
                 coin = new BlueCoin(game.getWidth(), game.getHeight(), snek, obstacle);
