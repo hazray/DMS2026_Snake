@@ -8,6 +8,7 @@ public class Game {
     private int height;
     private int score;
     private int maxScore;
+    private int initialMaxScore;
     private double multiplier;
     private int scorePoints;
     private double speed;
@@ -28,8 +29,9 @@ public class Game {
         this.powerUp = powerUp;
         width = x;
         height = y;
-        maxScore = x * y - 2;
-        this.powerUp = powerUp;
+        // The snake starts 2 cells long and grows by 1 per coin, so filling the board takes x*y - 2 coins.
+        initialMaxScore = x * y - 2;
+        maxScore = initialMaxScore;
         if (height > 50) {
             multiplier = 10;
         } else {
@@ -38,15 +40,19 @@ public class Game {
     }
 
     public boolean gameWon() {
-        return score == maxScore;
+        return score >= maxScore;
     }
 
     public void incScore() {
         score++;
     }
 
+    /**
+     * Lowers the winning score when obstacles are added, because each obstacle
+     * permanently blocks one cell the snake could otherwise fill.
+     */
     public void decMaxScore(int num) {
-        this.maxScore -= (num - 1);
+        this.maxScore -= num;
     }
 
     public int getWidth() {
@@ -60,6 +66,8 @@ public class Game {
     public void resetScore() {
         score = 0;
         scorePoints = 0;
+        // Obstacles are cleared on reset, so the winning score goes back to the full board.
+        maxScore = initialMaxScore;
     }
 
     public Color getColor() {
