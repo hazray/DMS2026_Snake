@@ -99,7 +99,7 @@ public class GameController {
         // Don't restart the game loop once the game has been won.
         if (event.getCode().isArrowKey() && !game.gameWon()) animation.play();
 
-        if (valKey(event.getCode()) && !keyPressed) {
+        if (isValidTurn(key, event.getCode()) && !keyPressed) {
             lastKey = key;
             key = event.getCode();
             keyPressed = true;
@@ -138,15 +138,23 @@ public class GameController {
         }
     }
 
-    private boolean valKey(KeyCode key) {
-        if (!key.isArrowKey()) return false;
-        else {
-            if (key.equals(KeyCode.LEFT)) if (!this.key.equals(KeyCode.RIGHT)) return true;
-            if (key.equals(KeyCode.RIGHT)) if (!this.key.equals(KeyCode.LEFT)) return true;
-            if (key.equals(KeyCode.DOWN)) if (!this.key.equals(KeyCode.UP)) return true;
-            if (key.equals(KeyCode.UP)) return !this.key.equals(KeyCode.DOWN);
-            return false;
-        }
+    /**
+     * Decides whether the snake may switch from its current direction to a requested one.
+     * Only arrow keys are turns, and the snake may not reverse straight into its own body.
+     * Static and free of game state so it can be unit-tested without starting JavaFX.
+     *
+     * @param current   the direction the snake is currently heading
+     * @param requested the arrow key the player pressed
+     * @return true if the snake should turn to {@code requested}
+     */
+    static boolean isValidTurn(KeyCode current, KeyCode requested) {
+        return switch (requested) {
+            case LEFT -> current != KeyCode.RIGHT;
+            case RIGHT -> current != KeyCode.LEFT;
+            case UP -> current != KeyCode.DOWN;
+            case DOWN -> current != KeyCode.UP;
+            default -> false;
+        };
     }
 
     private void reset() {
