@@ -9,7 +9,8 @@ import java.util.Random;
 
 public class Coin {
     private Point pos;
-    private Image image = new Image("resources/views/res/redcoin.png");
+    // Loaded on first use (see getImage) so a Coin can be created without JavaFX running, e.g. in unit tests.
+    private Image image;
 
     /**
      * Places the coin on a random cell that holds no snake part and no obstacle.
@@ -46,7 +47,20 @@ public class Coin {
         return points;
     }
 
+    /**
+     * Returns this coin's sprite, loading it the first time it is needed.
+     */
     public Image getImage() {
+        if (image == null) {
+            image = new Image(getImagePath());
+        }
         return image;
+    }
+
+    /**
+     * Classpath location of this coin's sprite. Subclasses override this to use their own image.
+     */
+    protected String getImagePath() {
+        return "resources/views/res/redcoin.png";
     }
 }
